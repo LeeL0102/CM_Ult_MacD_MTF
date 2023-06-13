@@ -1,0 +1,42 @@
+//@version=5
+strategy("CM_MacD_Ult_MTF", shorttitle="CM_Ult_MacD_MTF")
+
+source = close
+fastLength = input.int(12, "Fast Length", minval=1)
+slowLength = input.int(26, "Slow Length", minval=1)
+signalLength = input.int(9, "Signal Length", minval=1)
+
+fastMA = ta.ema(source, fastLength)
+slowMA = ta.ema(source, slowLength)
+
+macd = fastMA - slowMA
+signal = ta.sma(macd, signalLength)
+hist = macd - signal
+
+outMacD = macd
+outSignal = signal
+outHist = hist
+
+histA_IsUp = outHist > outHist[1] and outHist > 0
+histA_IsDown = outHist < outHist[1] and outHist > 0
+histB_IsDown = outHist < outHist[1] and outHist <= 0
+histB_IsUp = outHist > outHist[1] and outHist <= 0
+
+macd_IsAbove = outMacD >= outSignal
+macd_IsBelow = outMacD < outSignal
+
+plot_color = histA_IsUp ? color.aqua : histA_IsDown ? color.blue : histB_IsDown ? color.red : histB_IsUp ? color.maroon : color.yellow
+macd_color = macd_IsAbove ? color.lime : color.red
+signal_color = macd_IsAbove ? color.yellow : color.lime
+
+plot(outMacD, title="MACD", color=macd_color, linewidth=4)
+plot(outSignal, title="Signal Line", color=signal_color, linewidth=2)
+plot(outHist, title="Histogram", color=plot_color, style=plot.style_histogram, linewidth=4)
+
+// 交易信号
+long_signal = ta.crossover(outMacD, outSignal)
+short_signal = ta.crossunder(outMacD, outSignal)
+
+// 发出买入和卖出信号
+strategy.entry("Buy", strategy.long, when = long_signal)
+strategy.entry("Sell", strategy.short, when = short_signal)
